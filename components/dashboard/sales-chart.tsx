@@ -24,14 +24,14 @@ export function SalesChart() {
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis
                 dataKey="data"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="var(--muted-foreground)"
                 fontSize={12}
               />
               <YAxis
-                stroke="hsl(var(--muted-foreground))"
+                stroke="var(--muted-foreground)"
                 fontSize={12}
                 tickFormatter={(value) =>
                   `R$ ${(value / 1000).toFixed(0)}k`
@@ -39,11 +39,11 @@ export function SalesChart() {
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--border)',
                   borderRadius: '8px',
                 }}
-                labelStyle={{ color: 'hsl(var(--card-foreground))' }}
+                labelStyle={{ color: 'var(--card-foreground)' }}
                 formatter={(value: number) => [
                   value.toLocaleString('pt-BR', {
                     style: 'currency',
@@ -54,7 +54,7 @@ export function SalesChart() {
               />
               <Bar
                 dataKey="valor"
-                fill="hsl(var(--primary))"
+                fill="var(--card-foreground)"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>

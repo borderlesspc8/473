@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { POSTOS_DEMO } from '@/lib/data'
-import { COMBUSTIVEL_LABELS, TURNO_LABELS } from '@/types'
+import { COMBUSTIVEL_LABELS, TURNO_LABELS, type Turno } from '@/types'
 import {
   Store,
   Fuel,
@@ -46,11 +46,49 @@ import { toast } from 'sonner'
 
 export default function ConfiguracoesPage() {
   const [postosDialogOpen, setPostosDialogOpen] = useState(false)
+  const [turnosConfig, setTurnosConfig] = useState<Record<Turno, { inicio: string; fim: string }>>({
+    manha: { inicio: '06:00', fim: '14:00' },
+    tarde: { inicio: '14:00', fim: '22:00' },
+    noite: { inicio: '22:00', fim: '06:00' },
+  })
+
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('turnos-config')
+    if (!savedConfig) return
+
+    try {
+      const parsed = JSON.parse(savedConfig) as Record<Turno, { inicio: string; fim: string }>
+      if (parsed?.manha && parsed?.tarde && parsed?.noite) {
+        setTurnosConfig(parsed)
+      }
+    } catch {
+      // Ignore invalid data and keep default settings.
+    }
+  }, [])
 
   const handleSavePosto = (e: React.FormEvent) => {
     e.preventDefault()
     toast.success('Posto salvo com sucesso!')
     setPostosDialogOpen(false)
+  }
+
+  const handleTurnoChange = (
+    turno: Turno,
+    field: 'inicio' | 'fim',
+    value: string
+  ) => {
+    setTurnosConfig((prev) => ({
+      ...prev,
+      [turno]: {
+        ...prev[turno],
+        [field]: value,
+      },
+    }))
+  }
+
+  const handleSaveTurnos = () => {
+    localStorage.setItem('turnos-config', JSON.stringify(turnosConfig))
+    toast.success('Configurações de turnos salvas com sucesso!')
   }
 
   return (
@@ -284,65 +322,47 @@ export default function ConfiguracoesPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <Card className="bg-card">
-              <CardHeader>
-                <CardTitle className="text-base">Turno Manhã</CardTitle>
-                <CardDescription>Primeiro turno do dia</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Início</Label>
-                    <Input type="time" defaultValue="06:00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Fim</Label>
-                    <Input type="time" defaultValue="14:00" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {(['manha', 'tarde', 'noite'] as Turno[]).map((turno) => {
+              const descricaoPorTurno: Record<Turno, string> = {
+                manha: 'Primeiro turno do dia',
+                tarde: 'Segundo turno do dia',
+                noite: 'Terceiro turno do dia',
+              }
 
-            <Card className="bg-card">
-              <CardHeader>
-                <CardTitle className="text-base">Turno Tarde</CardTitle>
-                <CardDescription>Segundo turno do dia</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Início</Label>
-                    <Input type="time" defaultValue="14:00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Fim</Label>
-                    <Input type="time" defaultValue="22:00" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card">
-              <CardHeader>
-                <CardTitle className="text-base">Turno Noite</CardTitle>
-                <CardDescription>Terceiro turno do dia</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Início</Label>
-                    <Input type="time" defaultValue="22:00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Fim</Label>
-                    <Input type="time" defaultValue="06:00" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              return (
+                <Card key={turno} className="bg-card">
+                  <CardHeader>
+                    <CardTitle className="text-base">Turno {TURNO_LABELS[turno]}</CardTitle>
+                    <CardDescription>{descricaoPorTurno[turno]}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor={`${turno}-inicio`}>Início</Label>
+                        <Input
+                          id={`${turno}-inicio`}
+                          type="time"
+                          value={turnosConfig[turno].inicio}
+                          onChange={(e) => handleTurnoChange(turno, 'inicio', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`${turno}-fim`}>Fim</Label>
+                        <Input
+                          id={`${turno}-fim`}
+                          type="time"
+                          value={turnosConfig[turno].fim}
+                          onChange={(e) => handleTurnoChange(turno, 'fim', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
 
-          <Button>Salvar Configurações de Turnos</Button>
+          <Button onClick={handleSaveTurnos}>Salvar Configurações de Turnos</Button>
         </TabsContent>
 
         {/* Sistema */}

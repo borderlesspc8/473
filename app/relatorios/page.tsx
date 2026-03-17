@@ -367,24 +367,24 @@ export default function RelatoriosPage() {
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={combustivelData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis
                         dataKey="name"
-                        stroke="hsl(var(--muted-foreground))"
+                        stroke="var(--muted-foreground)"
                         fontSize={11}
                         angle={-20}
                         textAnchor="end"
                         height={60}
                       />
                       <YAxis
-                        stroke="hsl(var(--muted-foreground))"
+                        stroke="var(--muted-foreground)"
                         fontSize={12}
                         tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
+                          backgroundColor: 'var(--card)',
+                          border: '1px solid var(--border)',
                           borderRadius: '8px',
                         }}
                         formatter={(value: number) => [
@@ -430,8 +430,8 @@ export default function RelatoriosPage() {
                       </Pie>
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
+                          backgroundColor: 'var(--card)',
+                          border: '1px solid var(--border)',
                           borderRadius: '8px',
                         }}
                         formatter={(value: number) => [
