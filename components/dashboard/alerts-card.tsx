@@ -1,12 +1,13 @@
 'use client'
 
+import { memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Droplet, Wallet } from 'lucide-react'
 import { TANQUES_DEMO, CAIXAS_DEMO, POSTOS_DEMO } from '@/lib/data'
 import { COMBUSTIVEL_LABELS, TURNO_LABELS } from '@/types'
 
-export function AlertsCard() {
+export const AlertsCard = memo(function AlertsCard() {
   const tanquesBaixos = TANQUES_DEMO.filter(
     (t) => t.nivelAtual / t.capacidadeTotal < 0.2
   )
@@ -99,4 +100,4 @@ export function AlertsCard() {
       </CardContent>
     </Card>
   )
-}
+})

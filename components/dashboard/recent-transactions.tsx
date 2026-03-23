@@ -1,12 +1,13 @@
 'use client'
 
+import { memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LANCAMENTOS_DEMO, POSTOS_DEMO } from '@/lib/data'
 import { COMBUSTIVEL_LABELS, TURNO_LABELS } from '@/types'
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 
-export function RecentTransactions() {
+export const RecentTransactions = memo(function RecentTransactions() {
   const recentLancamentos = LANCAMENTOS_DEMO.slice(0, 8)
 
   return (
@@ -71,4 +72,4 @@ export function RecentTransactions() {
       </CardContent>
     </Card>
   )
-}
+})

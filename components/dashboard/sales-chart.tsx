@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   BarChart,
@@ -12,7 +13,7 @@ import {
 } from 'recharts'
 import { calcularTotalVendasSemana } from '@/lib/data'
 
-export function SalesChart() {
+export const SalesChart = memo(function SalesChart() {
   const data = calcularTotalVendasSemana()
 
   return (
@@ -63,4 +64,4 @@ export function SalesChart() {
       </CardContent>
     </Card>
   )
-}
+})

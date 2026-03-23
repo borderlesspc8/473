@@ -1,5 +1,6 @@
+import dynamic from 'next/dynamic'
 import { MetricCard } from '@/components/dashboard/metric-card'
-import { SalesChart } from '@/components/dashboard/sales-chart'
+import { SalesChartLazy } from '@/components/dashboard/sales-chart-lazy'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { AlertsCard } from '@/components/dashboard/alerts-card'
 import {
@@ -74,7 +75,7 @@ export default function DashboardPage() {
       {/* Charts and Lists */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <SalesChart />
+          <SalesChartLazy />
         </div>
         <div>
           <AlertsCard />

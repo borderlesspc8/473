@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +13,7 @@ interface TankGaugeProps {
   showPosto?: boolean
 }
 
-export function TankGauge({ tanque, showPosto = true }: TankGaugeProps) {
+export const TankGauge = memo(function TankGauge({ tanque, showPosto = true }: TankGaugeProps) {
   const percentual = (tanque.nivelAtual / tanque.capacidadeTotal) * 100
   const posto = POSTOS_DEMO.find((p) => p.id === tanque.postoId)
   
@@ -93,4 +94,4 @@ export function TankGauge({ tanque, showPosto = true }: TankGaugeProps) {
       </CardContent>
     </Card>
   )
-}
+})

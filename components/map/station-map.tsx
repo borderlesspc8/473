@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { POSTOS_DEMO, TANQUES_DEMO } from '@/lib/data'
-import { COMBUSTIVEL_LABELS } from '@/types'
+import { TANQUES_DEMO } from '@/lib/data'
+import { COMBUSTIVEL_LABELS, type Posto } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { MapPin, Navigation } from 'lucide-react'
@@ -53,9 +53,10 @@ function MapController({ center }: { center: [number, number] | null }) {
 interface StationMapProps {
   selectedStation?: string | null
   onSelectStation?: (id: string) => void
+  postos?: Posto[]
 }
 
-export function StationMap({ selectedStation, onSelectStation }: StationMapProps) {
+export function StationMap({ selectedStation, onSelectStation, postos = [] }: StationMapProps) {
   const [mapCenter, setMapCenter] = useState<[number, number]>([-23.55, -46.63])
   const [flyToCenter, setFlyToCenter] = useState<[number, number] | null>(null)
 
@@ -77,7 +78,7 @@ export function StationMap({ selectedStation, onSelectStation }: StationMapProps
         />
         <MapController center={flyToCenter} />
         
-        {POSTOS_DEMO.map((posto) => {
+        {postos.map((posto) => {
           const tanques = TANQUES_DEMO.filter((t) => t.postoId === posto.id)
           const isSelected = selectedStation === posto.id
           
@@ -152,7 +153,7 @@ export function StationMap({ selectedStation, onSelectStation }: StationMapProps
           Ir para posto:
         </p>
         <div className="flex flex-col gap-1">
-          {POSTOS_DEMO.filter((p) => p.status === 'ativo').map((posto) => (
+          {postos.filter((p) => p.status === 'ativo').map((posto) => (
             <Button
               key={posto.id}
               variant="ghost"

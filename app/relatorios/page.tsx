@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -29,83 +32,104 @@ import {
   Download,
   TrendingDown,
   Fuel,
-  Calendar,
+  CalendarIcon,
   FileSpreadsheet,
 } from 'lucide-react'
 import { exportarFaltasCaixaPDF, exportarLancamentosPDF, exportarCaixasExcel, exportarLancamentosExcel } from '@/lib/export'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts'
+import dynamic from 'next/dynamic'
 
-const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6']
+const RelatoriosCharts = dynamic(
+  () => import('@/components/relatorios/relatorios-charts'),
+  {
+    loading: () => (
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="h-80 animate-pulse rounded-xl bg-muted/20" />
+        <div className="h-80 animate-pulse rounded-xl bg-muted/20" />
+      </div>
+    ),
+  }
+)
 
 export default function RelatoriosPage() {
-  const [dataInicio, setDataInicio] = useState('')
-  const [dataFim, setDataFim] = useState('')
+  const [dataInicio, setDataInicio] = useState<Date | undefined>(undefined)
+  const [dataFim, setDataFim] = useState<Date | undefined>(undefined)
   const [postoFilter, setPostoFilter] = useState<string>('all')
 
   // Faltas de caixa
-  const faltasCaixa = CAIXAS_DEMO.filter((c) => {
-    const matchesPosto = postoFilter === 'all' || c.postoId === postoFilter
-    const matchesData =
-      (!dataInicio || c.data >= new Date(dataInicio)) &&
-      (!dataFim || c.data <= new Date(dataFim + 'T23:59:59'))
-    return c.diferenca < 0 && matchesPosto && matchesData
-  })
+  const faltasCaixa = useMemo(
+    () =>
+      CAIXAS_DEMO.filter((c) => {
+        const matchesPosto = postoFilter === 'all' || c.postoId === postoFilter
+        const inicioDay = dataInicio ? new Date(dataInicio.setHours(0, 0, 0, 0)) : null
+        const fimDay = dataFim ? new Date(new Date(dataFim).setHours(23, 59, 59, 999)) : null
+        const matchesData =
+          (!inicioDay || c.data >= inicioDay) &&
+          (!fimDay || c.data <= fimDay)
+        return c.diferenca < 0 && matchesPosto && matchesData
+      }),
+    [postoFilter, dataInicio, dataFim]
+  )
 
-  const totalFaltas = faltasCaixa.reduce((acc, c) => acc + c.diferenca, 0)
+  const totalFaltas = useMemo(
+    () => faltasCaixa.reduce((acc, c) => acc + c.diferenca, 0),
+    [faltasCaixa]
+  )
 
   // Lançamentos filtrados
-  const lancamentosFiltrados = LANCAMENTOS_DEMO.filter((l) => {
-    const matchesPosto = postoFilter === 'all' || l.postoId === postoFilter
-    const matchesData =
-      (!dataInicio || l.data >= new Date(dataInicio)) &&
-      (!dataFim || l.data <= new Date(dataFim + 'T23:59:59'))
-    return matchesPosto && matchesData
-  })
+  const lancamentosFiltrados = useMemo(
+    () =>
+      LANCAMENTOS_DEMO.filter((l) => {
+        const matchesPosto = postoFilter === 'all' || l.postoId === postoFilter
+        const inicioDay = dataInicio ? new Date(new Date(dataInicio).setHours(0, 0, 0, 0)) : null
+        const fimDay = dataFim ? new Date(new Date(dataFim).setHours(23, 59, 59, 999)) : null
+        const matchesData =
+          (!inicioDay || l.data >= inicioDay) &&
+          (!fimDay || l.data <= fimDay)
+        return matchesPosto && matchesData
+      }),
+    [postoFilter, dataInicio, dataFim]
+  )
 
   // Dados para gráfico de combustíveis
-  const combustivelData = Object.entries(
-    lancamentosFiltrados.reduce(
-      (acc, l) => {
-        const key = l.tipoCombustivel
-        if (!acc[key]) acc[key] = { compras: 0, vendas: 0 }
-        if (l.tipo === 'compra') acc[key].compras += l.quantidade
-        else acc[key].vendas += l.quantidade
-        return acc
-      },
-      {} as Record<string, { compras: number; vendas: number }>
-    )
-  ).map(([combustivel, data]) => ({
-    name: COMBUSTIVEL_LABELS[combustivel as keyof typeof COMBUSTIVEL_LABELS],
-    Compras: data.compras,
-    Vendas: data.vendas,
-  }))
+  const combustivelData = useMemo(
+    () =>
+      Object.entries(
+        lancamentosFiltrados.reduce(
+          (acc, l) => {
+            const key = l.tipoCombustivel
+            if (!acc[key]) acc[key] = { compras: 0, vendas: 0 }
+            if (l.tipo === 'compra') acc[key].compras += l.quantidade
+            else acc[key].vendas += l.quantidade
+            return acc
+          },
+          {} as Record<string, { compras: number; vendas: number }>
+        )
+      ).map(([combustivel, data]) => ({
+        name: COMBUSTIVEL_LABELS[combustivel as keyof typeof COMBUSTIVEL_LABELS],
+        Compras: data.compras,
+        Vendas: data.vendas,
+      })),
+    [lancamentosFiltrados]
+  )
 
   // Dados para gráfico de pizza por posto
-  const postoData = Object.entries(
-    lancamentosFiltrados
-      .filter((l) => l.tipo === 'venda')
-      .reduce(
-        (acc, l) => {
-          const posto = POSTOS_DEMO.find((p) => p.id === l.postoId)
-          const key = posto?.nome || 'Desconhecido'
-          acc[key] = (acc[key] || 0) + l.valorTotal
-          return acc
-        },
-        {} as Record<string, number>
-      )
-  ).map(([name, value]) => ({ name, value }))
+  const postoData = useMemo(
+    () =>
+      Object.entries(
+        lancamentosFiltrados
+          .filter((l) => l.tipo === 'venda')
+          .reduce(
+            (acc, l) => {
+              const posto = POSTOS_DEMO.find((p) => p.id === l.postoId)
+              const key = posto?.nome || 'Desconhecido'
+              acc[key] = (acc[key] || 0) + l.valorTotal
+              return acc
+            },
+            {} as Record<string, number>
+          )
+      ).map(([name, value]) => ({ name, value })),
+    [lancamentosFiltrados]
+  )
 
   const handleExportFaltasPDF = () => {
     exportarFaltasCaixaPDF(faltasCaixa, 'relatorio-faltas-caixa')
@@ -158,21 +182,55 @@ export default function RelatoriosPage() {
             </div>
             <div className="space-y-2">
               <Label>Data Início</Label>
-              <Input
-                type="date"
-                value={dataInicio}
-                onChange={(e) => setDataInicio(e.target.value)}
-                className="w-40"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-44 justify-start gap-2 text-left font-normal"
+                  >
+                    <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {dataInicio
+                      ? format(dataInicio, 'dd/MM/yyyy', { locale: ptBR })
+                      : <span className="text-muted-foreground">Selecionar data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dataInicio}
+                    onSelect={setDataInicio}
+                    disabled={(date) => (dataFim ? date > dataFim : false)}
+                    locale={ptBR}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label>Data Fim</Label>
-              <Input
-                type="date"
-                value={dataFim}
-                onChange={(e) => setDataFim(e.target.value)}
-                className="w-40"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-44 justify-start gap-2 text-left font-normal"
+                  >
+                    <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {dataFim
+                      ? format(dataFim, 'dd/MM/yyyy', { locale: ptBR })
+                      : <span className="text-muted-foreground">Selecionar data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dataFim}
+                    onSelect={setDataFim}
+                    disabled={(date) => (dataInicio ? date < dataInicio : false)}
+                    locale={ptBR}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardContent>
@@ -356,97 +414,7 @@ export default function RelatoriosPage() {
           </div>
 
           {/* Charts */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="bg-card">
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Volume por Tipo de Combustível
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={combustivelData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis
-                        dataKey="name"
-                        stroke="var(--muted-foreground)"
-                        fontSize={11}
-                        angle={-20}
-                        textAnchor="end"
-                        height={60}
-                      />
-                      <YAxis
-                        stroke="var(--muted-foreground)"
-                        fontSize={12}
-                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'var(--card)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '8px',
-                        }}
-                        formatter={(value: number) => [
-                          `${value.toLocaleString('pt-BR')}L`,
-                        ]}
-                      />
-                      <Legend />
-                      <Bar dataKey="Compras" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="Vendas" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card">
-              <CardHeader>
-                <CardTitle className="text-base">Vendas por Posto</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={postoData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="value"
-                        label={({ name, percent }) =>
-                          `${name} (${(percent * 100).toFixed(0)}%)`
-                        }
-                        labelLine={false}
-                      >
-                        {postoData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'var(--card)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '8px',
-                        }}
-                        formatter={(value: number) => [
-                          value.toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          }),
-                        ]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <RelatoriosCharts combustivelData={combustivelData} postoData={postoData} />
         </TabsContent>
       </Tabs>
     </div>

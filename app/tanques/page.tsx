@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
@@ -33,28 +33,45 @@ export default function TanquesPage() {
   const [combustivelFilter, setCombustivelFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
 
-  const combustiveis = [
-    ...new Set(TANQUES_DEMO.map((t) => t.tipoCombustivel)),
-  ] as TipoCombustivel[]
-
-  const filteredTanques = TANQUES_DEMO.filter((tanque) => {
-    const matchesPosto =
-      postoFilter === 'all' || tanque.postoId === postoFilter
-    const matchesCombustivel =
-      combustivelFilter === 'all' ||
-      tanque.tipoCombustivel === combustivelFilter
-    return matchesPosto && matchesCombustivel
-  })
-
-  const tanquesBaixos = filteredTanques.filter(
-    (t) => t.nivelAtual / t.capacidadeTotal < 0.2
+  const combustiveis = useMemo(
+    () =>
+      [
+        ...new Set(TANQUES_DEMO.map((t) => t.tipoCombustivel)),
+      ] as TipoCombustivel[],
+    []
   )
-  const tanquesAtencao = filteredTanques.filter((t) => {
-    const p = t.nivelAtual / t.capacidadeTotal
-    return p >= 0.2 && p < 0.5
-  })
-  const tanquesNormais = filteredTanques.filter(
-    (t) => t.nivelAtual / t.capacidadeTotal >= 0.5
+
+  const filteredTanques = useMemo(
+    () =>
+      TANQUES_DEMO.filter((tanque) => {
+        const matchesPosto =
+          postoFilter === 'all' || tanque.postoId === postoFilter
+        const matchesCombustivel =
+          combustivelFilter === 'all' ||
+          tanque.tipoCombustivel === combustivelFilter
+        return matchesPosto && matchesCombustivel
+      }),
+    [postoFilter, combustivelFilter]
+  )
+
+  const tanquesBaixos = useMemo(
+    () => filteredTanques.filter((t) => t.nivelAtual / t.capacidadeTotal < 0.2),
+    [filteredTanques]
+  )
+  const tanquesAtencao = useMemo(
+    () =>
+      filteredTanques.filter((t) => {
+        const p = t.nivelAtual / t.capacidadeTotal
+        return p >= 0.2 && p < 0.5
+      }),
+    [filteredTanques]
+  )
+  const tanquesNormais = useMemo(
+    () =>
+      filteredTanques.filter(
+        (t) => t.nivelAtual / t.capacidadeTotal >= 0.5
+      ),
+    [filteredTanques]
   )
 
   return (

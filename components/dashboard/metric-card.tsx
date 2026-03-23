@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
@@ -14,7 +15,7 @@ interface MetricCardProps {
   variant?: 'default' | 'success' | 'warning' | 'danger'
 }
 
-export function MetricCard({
+export const MetricCard = memo(function MetricCard({
   title,
   value,
   subtitle,
@@ -67,4 +68,4 @@ export function MetricCard({
       </CardContent>
     </Card>
   )
-}
+})
